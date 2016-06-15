@@ -3,7 +3,7 @@
 
 '''
 @author:     Christophe Vandeplas <christophe@vandeplas.com>
-@copyright:  AGPLv3 
+@copyright:  AGPLv3
              http://www.gnu.org/licenses/agpl.html
 
 To be implemented:
@@ -220,7 +220,7 @@ class Pastie():
             try:
                 self.md5 = hashlib.md5(self.pastie_content.encode('utf-8')).hexdigest()
                 logger.debug('Pastie {site} {id} has md5: "{md5}"'.format(site=self.site.name, id=self.id, md5=self.md5))
-            except Exception, e:
+            except(Exception, e):
                 logger.error('Pastie {site} {id} md5 problem: {e}'.format(site=self.site.name, id=self.id, e=e))
 
     def fetch_pastie(self):
@@ -324,12 +324,12 @@ class Pastie():
             return unicode(descriptions)
         else:
             return ''
-    
+
     def save_mongo(self):
         content = self.pastie_content.encode('utf8')
         hash = hashlib.md5()
         hash.update(content)
-        
+
         mongo_col.insert({"hash":hash.hexdigest(), "matches": self.matches, "content":content})
 
     def send_email_alert(self):
@@ -370,9 +370,9 @@ Below (after newline) is the content of the pastie:
             # send the mail
             s.sendmail(yamlconfig['email']['from'], recipients, msg.as_string())
             s.close()
-        except smtplib.SMTPException, e:
+        except(smtplib.SMTPException, e):
             logger.error("ERROR: unable to send email: {0}".format(e))
-        except Exception, e:
+        except(Exception, e):
             logger.error("ERROR: unable to send email. Are your email setting correct?: {e}".format(e=e))
 
 
@@ -540,9 +540,9 @@ def main():
         try:
             for t in threads:
                 t.join(1)
-        except KeyboardInterrupt:
-            print ''
-            print "Ctrl-c received! Sending kill to threads..."
+        except(KeyboardInterrupt):
+            print('')
+            print("Ctrl-c received! Sending kill to threads...")
             for t in threads:
                 t.kill_received = True
             exit(0)  # quit immediately
@@ -555,7 +555,7 @@ def load_user_agents_from_file(filename):
     global user_agents_list
     try:
         f = open(filename)
-    except Exception, e:
+    except(Exception, e):
         logger.error('Configuration problem: user-agent-file "{file}" not found or not readable: {e}'.format(file=filename, e=e))
     for line in f:
         line = line.strip()
@@ -604,7 +604,7 @@ def load_proxies_from_file(filename):
     global proxies_list
     try:
         f = open(filename)
-    except Exception, e:
+    except(Exception, e):
         logger.error('Configuration problem: proxyfile "{file}" not found or not readable: {e}'.format(file=filename, e=e))
     for line in f:
         line = line.strip()
@@ -630,7 +630,7 @@ def failed_proxy(proxy):
         proxies_lock.acquire()
         try:
             proxies_list.remove(proxy)
-        except ValueError:
+        except(ValueError):
             pass
         proxies_lock.release()
         logger.info("Proxies left: {0}".format(len(proxies_list)))
@@ -682,7 +682,7 @@ def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0):
             response = opener.open(url)
         htmlPage = unicode(response.read(), errors='replace')
         return htmlPage, response.headers
-    except urllib2.HTTPError, e:
+    except(urllib2.HTTPError, e):
         failed_proxy(random_proxy)
         logger.warning("!!Proxy error on {0}.".format(url))
         if 404 == e.code:
@@ -721,7 +721,7 @@ def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0):
                 return download_url(url)
         logger.warning("ERROR: HTTP Error ##### {e} ######################## {url}".format(e=e, url=url))
         return None, None
-    except urllib2.URLError, e:
+    except(urllib2.URLError, e):
         logger.debug("ERROR: URL Error ##### {e} ######################## ".format(e=e, url=url))
         if random_proxy:  # remove proxy from the list if needed
             failed_proxy(random_proxy)
@@ -736,7 +736,7 @@ def download_url(url, data=None, cookie=None, loop_client=0, loop_server=0):
             time.sleep(60)
             return download_url(url, loop_server=loop_server)
         return None, None
-    except socket.timeout:
+    except(socket.timeout):
         logger.debug("ERROR: timeout ############################# " + url)
         if random_proxy:  # remove proxy from the list if needed
             failed_proxy(random_proxy)
@@ -782,7 +782,7 @@ class Sqlite3Database(threading.Thread):
                     matches TEXT
                     )''')
             self.db_conn.commit()
-        except sqlite3.DatabaseError, e:
+        except(sqlite3.DatabaseError, e):
             logger.error('Problem with the SQLite database {0}: {1}'.format(self.filename, e))
             return None
         # loop over the queue
@@ -795,7 +795,7 @@ class Sqlite3Database(threading.Thread):
                 # signals to queue job is done
                 self.queue.task_done()
             # catch unknown errors
-            except Exception, e:
+            except(Exception, e):
                 logger.error("Thread for SQLite crashed unexpectectly, recovering...: {e}".format(e=e))
                 logger.debug(traceback.format_exc())
 
@@ -823,7 +823,7 @@ class Sqlite3Database(threading.Thread):
                     }
             self.c.execute('INSERT INTO pasties VALUES (:site, :id, :md5, :url, :local_path, :timestamp, :matches)', data)
             self.db_conn.commit()
-        except sqlite3.DatabaseError, e:
+        except(sqlite3.DatabaseError, e):
             logger.error('Cannot add pastie {site} {id} in the SQLite database: {error}'.format(site=pastie.site.name, id=pastie.id, error=e))
         logger.debug('Added pastie {site} {id} in the SQLite database.'.format(site=pastie.site.name, id=pastie.id))
 
@@ -844,7 +844,7 @@ class Sqlite3Database(threading.Thread):
                                             matches = :matches
                      WHERE site = :site AND id = :id''', data)
             self.db_conn.commit()
-        except sqlite3.DatabaseError, e:
+        except(sqlite3.DatabaseError, e):
             logger.error('Cannot add pastie {site} {id} in the SQLite database: {error}'.format(site=pastie.site.name, id=pastie.id, error=e))
         logger.debug('Updated pastie {site} {id} in the SQLite database.'.format(site=pastie.site.name, id=pastie.id))
 
@@ -855,7 +855,7 @@ def parse_config_file(configfile):
         yamlconfig = yaml.load(file(configfile))
         for includes in yamlconfig.get("includes", []):
             yamlconfig.update(yaml.load(open(includes)))
-    except yaml.YAMLError, exc:
+    except(yaml.YAMLError, exc):
         logger.error("Error in configuration file:")
         if hasattr(exc, 'problem_mark'):
             mark = exc.problem_mark
@@ -869,7 +869,7 @@ def parse_config_file(configfile):
     if yamlconfig['mongo']['save']:
         try:
             from pymongo import MongoClient
-            client = MongoClient(yamlconfig['mongo']['url']) 
+            client = MongoClient(yamlconfig['mongo']['url'])
 
             database = yamlconfig['mongo']['database']
             db = client[database]
@@ -895,11 +895,11 @@ def main_as_daemon():
             pid_file = open('pid', 'w')
             pid_file.write(str(pid))
             pid_file.close()
-            print 'pystemon started as daemon'
-            print 'PID: %d' % pid
+            print('pystemon started as daemon')
+            print('PID: %d' % pid)
             os._exit(0)
 
-    except OSError, error:
+    except(OSError, error):
         logger.error('Unable to fork, can\'t run as daemon. Error: {id} {error}'.format(id=error.errno, error=error.strerror))
         os._exit(1)
 
@@ -914,7 +914,7 @@ if __name__ == "__main__":
     parser.add_option("-d", "--daemon", action="store_true", dest="daemon",
                       help="runs in background as a daemon")
     parser.add_option("-k", "--kill", action="store_true", dest="kill",
-                      help="kill pystemon daemon")                  
+                      help="kill pystemon daemon")
     parser.add_option("-s", "--stats", action="store_true", dest="stats",
                       help="display statistics about the running threads (NOT IMPLEMENTED)")
     parser.add_option("-v", action="store_true", dest="verbose",
@@ -962,7 +962,7 @@ if __name__ == "__main__":
             f.close()
             os.remove('pid')
             os.kill(int(pid), 9)
-            print "pystemon stopped, pid: " + pid
+            print("pystemon stopped, pid: " + pid)
             os._exit(0)
     if options.daemon:
         main_as_daemon()
